@@ -2,7 +2,7 @@
 * It is writen in Qt5 and uses a HTTP API endpoint that has changed
     * We used to get all the jokes in one go: 
         * http://api.icndb.com/jokes/random/<number>
-    * Now the changes to the api are documented here: 
+    * The changes to the api are documented here: 
         https://api.chucknorris.io/
 
 * The task: 
