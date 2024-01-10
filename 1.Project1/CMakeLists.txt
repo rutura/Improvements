@@ -15,16 +15,27 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Quick)
 set(PROJECT_SOURCES
         main.cpp
 )
+
 set(RESOURCES
     qml.qrc
     resource.qrc
 )
 
+set(qml_resource_files
+    "main.qml"
+    "images/LearnQtLogo.png"
+)
+
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_resources(PROJECT_SOURCES  ${RESOURCES})
     qt_add_executable(${PROJECT_NAME}
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+    )
+    qt_add_resources(${PROJECT_NAME} "qml"
+        PREFIX
+            "/"
+        FILES
+            ${qml_resource_files}
     )
 else()
     add_executable(${PROJECT_NAME}
