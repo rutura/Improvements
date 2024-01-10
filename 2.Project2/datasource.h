@@ -34,16 +34,26 @@ signals:
     void preItemRemoved(int index);
     void postItemRemoved();
 
+    void requestCompleted();
 private slots:
     void dataReadyRead();
     void dataReadFinished();
 
+    void makeRequest();
 public slots:
 private :
     QNetworkAccessManager * mNetManager;
     QNetworkReply * mNetReply;
     QByteArray * mDataBuffer;
     QList<Joke*> mJokes;
+
+    typedef enum : unsigned int {
+        REQUESTS_ONGOING = 0,
+        REQUESTS_COMPLETED,
+    }RequestsState;
+
+    RequestsState mRequestState{REQUESTS_COMPLETED};
+    int mRequestsToMake{0};
 };
 
 #endif // DATASOURCE_H

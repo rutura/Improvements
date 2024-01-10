@@ -2,7 +2,7 @@
 #define APPWRAPPER_H
 #include <QQmlApplicationEngine>
 #include <QObject>
-#include "datasource.h"
+// #include "datasource.h"
 #include "jokemodel.h"
 
 class AppWrapper : public QObject

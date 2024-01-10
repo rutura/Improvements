@@ -4,24 +4,27 @@
 #include <QDebug>
 #include "datasource.h"
 
+// #define USE_ICNDB_JOKE_SOURCE // uncomment to enable icndb joke source
+
 DataSource::DataSource(QObject *parent) : QObject(parent),
     mNetManager(new QNetworkAccessManager(this)),
     mNetReply(nullptr),
     mDataBuffer(new QByteArray)
 {
-
+    connect(this, &DataSource::requestCompleted, this, &DataSource::makeRequest);
 }
 
 void DataSource::fetchJokes(int number)
 {
-    //Initialize our API data
-    const QUrl API_ENDPOINT("http://api.icndb.com/jokes/random/"+QString::number(number));
-    QNetworkRequest request;
-    request.setUrl(API_ENDPOINT);
-
-    mNetReply = mNetManager->get(request);
-    connect(mNetReply,&QIODevice::readyRead,this,&DataSource::dataReadyRead);
-    connect(mNetReply,&QNetworkReply::finished,this,&DataSource::dataReadFinished);
+    switch(mRequestState){
+    case REQUESTS_ONGOING:
+        mRequestsToMake += number;
+        break;
+    case REQUESTS_COMPLETED:
+        mRequestsToMake = number - 1;// -1 accounts for the request we just made
+        makeRequest();
+        break;
+    }
 }
 
 void DataSource::addJoke(Joke *joke)
@@ -78,7 +81,10 @@ void DataSource::dataReadFinished()
         QJsonDocument doc = QJsonDocument::fromJson(*mDataBuffer);
         //Grab the value array
         QJsonObject data = doc.object();
-
+#if !defined(USE_ICNDB_JOKE_SOURCE)
+        QString joke = data["value"].toString();
+        addJoke(joke);
+#else
         QJsonArray array = data["value"].toArray();
 
         qDebug() << "Number of jokes " << array.size();
@@ -91,8 +97,32 @@ void DataSource::dataReadFinished()
 
             addJoke(joke);
         }
-
+        mRequestsToMake = 0;
+#endif
         //Clear the buffer
         mDataBuffer->clear();
+        if(mRequestsToMake > 0){
+            --mRequestsToMake;
+            mRequestState = REQUESTS_ONGOING;
+            emit requestCompleted();
+        }else{
+            mRequestState = REQUESTS_COMPLETED;
+        }
     }
+}
+
+void DataSource::makeRequest()
+{
+#if defined(USE_ICNDB_JOKE_SOURCE)
+    //Initialize our API data
+    const QUrl API_ENDPOINT("http://api.icndb.com/jokes/random/"+QString::number(mRequestsToMake));
+#else
+    const QUrl API_ENDPOINT("https://api.chucknorris.io/jokes/random");
+#endif
+    QNetworkRequest request;
+    request.setUrl(API_ENDPOINT);
+
+    mNetReply = mNetManager->get(request);
+    connect(mNetReply,&QIODevice::readyRead,this,&DataSource::dataReadyRead);
+    connect(mNetReply,&QNetworkReply::finished,this,&DataSource::dataReadFinished);
 }
