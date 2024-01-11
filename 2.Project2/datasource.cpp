@@ -4,6 +4,12 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
+// #define ENABLE_LOOPED_REQUESTS // uncomment to enable looped requests
+
+#if defined(ENABLE_LOOPED_REQUESTS)
+  #define MAX_WAIT_BETWEEN_REQUESTS 3000
+#endif
+
 DataSource::DataSource(QObject *parent)
   : QObject(parent), mNetManager(new QNetworkAccessManager(this)), mNetReply(nullptr), mDataBuffer(new QByteArray)
 {
@@ -12,6 +18,13 @@ DataSource::DataSource(QObject *parent)
 
 void DataSource::fetchJokes(int number)
 {
+#if defined(ENABLE_LOOPED_REQUESTS)
+  mRequestsToMake += number;
+  do {
+    makeRequest();
+    --mRequestsToMake;
+  } while (mRequestsToMake > 0);
+#else
   switch (mRequestState) {
   case RequestsState::REQUESTS_ONGOING:
     mRequestsToMake += number;
@@ -21,6 +34,7 @@ void DataSource::fetchJokes(int number)
     makeRequest();
     break;
   }
+#endif
 }
 
 void DataSource::addJoke(Joke *joke)
@@ -74,6 +88,7 @@ void DataSource::dataReadFinished()
 
     // Clear the buffer
     mDataBuffer->clear();
+#if !defined(ENABLE_LOOPED_REQUESTS)
     if (mRequestsToMake > 0) {
       --mRequestsToMake;
       mRequestState = RequestsState::REQUESTS_ONGOING;
@@ -81,6 +96,7 @@ void DataSource::dataReadFinished()
     } else {
       mRequestState = RequestsState::REQUESTS_COMPLETED;
     }
+#endif
   }
 }
 
@@ -89,8 +105,15 @@ void DataSource::makeRequest()
   const QUrl API_ENDPOINT("https://api.chucknorris.io/jokes/random");
   QNetworkRequest request;
   request.setUrl(API_ENDPOINT);
-
+#if defined(ENABLE_LOOPED_REQUESTS)
+  if(!mMutex.tryLock(MAX_WAIT_BETWEEN_REQUESTS)){// lock failed
+    return;
+  }
+#endif
   mNetReply = mNetManager->get(request);
   connect(mNetReply, &QIODevice::readyRead, this, &DataSource::dataReadyRead);
   connect(mNetReply, &QNetworkReply::finished, this, &DataSource::dataReadFinished);
+#if defined(ENABLE_LOOPED_REQUESTS)
+  mMutex.unlock();
+#endif
 }

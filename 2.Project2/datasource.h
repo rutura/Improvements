@@ -6,6 +6,7 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QObject>
+#include <QMutex>
 
 class DataSource : public QObject
 {
@@ -54,6 +55,7 @@ private:
 
   RequestsState mRequestState{ RequestsState::REQUESTS_COMPLETED };
   int mRequestsToMake{ 0 };
+  QMutex mMutex{};
 };
 
 #endif// DATASOURCE_H
