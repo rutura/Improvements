@@ -4,8 +4,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-// #define USE_ICNDB_JOKE_SOURCE // uncomment to enable icndb joke source
-
 DataSource::DataSource(QObject *parent)
   : QObject(parent), mNetManager(new QNetworkAccessManager(this)), mNetReply(nullptr), mDataBuffer(new QByteArray)
 {
@@ -15,10 +13,10 @@ DataSource::DataSource(QObject *parent)
 void DataSource::fetchJokes(int number)
 {
   switch (mRequestState) {
-  case REQUESTS_ONGOING:
+  case RequestsState::REQUESTS_ONGOING:
     mRequestsToMake += number;
     break;
-  case REQUESTS_COMPLETED:
+  case RequestsState::REQUESTS_COMPLETED:
     mRequestsToMake = number - 1;// -1 accounts for the request we just made
     makeRequest();
     break;
@@ -71,44 +69,24 @@ void DataSource::dataReadFinished()
     QJsonDocument doc = QJsonDocument::fromJson(*mDataBuffer);
     // Grab the value array
     QJsonObject data = doc.object();
-#if !defined(USE_ICNDB_JOKE_SOURCE)
     QString joke = data["value"].toString();
     addJoke(joke);
-#else
-    QJsonArray array = data["value"].toArray();
 
-    qDebug() << "Number of jokes " << array.size();
-
-    for (int i = 0; i < array.size(); i++) {
-
-      QJsonObject object = array.at(i).toObject();
-
-      QString joke = object["joke"].toString();
-
-      addJoke(joke);
-    }
-    mRequestsToMake = 0;
-#endif
     // Clear the buffer
     mDataBuffer->clear();
     if (mRequestsToMake > 0) {
       --mRequestsToMake;
-      mRequestState = REQUESTS_ONGOING;
+      mRequestState = RequestsState::REQUESTS_ONGOING;
       emit requestCompleted();
     } else {
-      mRequestState = REQUESTS_COMPLETED;
+      mRequestState = RequestsState::REQUESTS_COMPLETED;
     }
   }
 }
 
 void DataSource::makeRequest()
 {
-#if defined(USE_ICNDB_JOKE_SOURCE)
-  // Initialize our API data
-  const QUrl API_ENDPOINT("http://api.icndb.com/jokes/random/" + QString::number(mRequestsToMake));
-#else
   const QUrl API_ENDPOINT("https://api.chucknorris.io/jokes/random");
-#endif
   QNetworkRequest request;
   request.setUrl(API_ENDPOINT);
 

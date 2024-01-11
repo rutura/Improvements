@@ -47,12 +47,12 @@ private:
   QByteArray *mDataBuffer;
   QList<Joke *> mJokes;
 
-  typedef enum : unsigned int {
+  enum class RequestsState : std::uint8_t {
     REQUESTS_ONGOING = 0,
     REQUESTS_COMPLETED,
-  } RequestsState;
+  };
 
-  RequestsState mRequestState{ REQUESTS_COMPLETED };
+  RequestsState mRequestState{ RequestsState::REQUESTS_COMPLETED };
   int mRequestsToMake{ 0 };
 };
 
