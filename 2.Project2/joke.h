@@ -5,20 +5,20 @@
 
 class Joke : public QObject
 {
-    Q_OBJECT
-    Q_PROPERTY(QString joke READ joke WRITE setJoke NOTIFY jokeChanged)
+  Q_OBJECT
+  Q_PROPERTY(QString joke READ joke WRITE setJoke NOTIFY jokeChanged)
 public:
-    explicit Joke(const QString & joke, QObject *parent = nullptr);
+  explicit Joke(const QString &joke, QObject *parent = nullptr);
 
-    QString joke() const;
+  QString joke() const;
 
-    void setJoke(QString joke);
+  void setJoke(QString joke);
 
 signals:
-    void jokeChanged(QString joke);
+  void jokeChanged(QString joke);
 
-private :
-    QString m_joke;
+private:
+  QString m_joke;
 };
 
-#endif // JOKE_H
+#endif// JOKE_H
